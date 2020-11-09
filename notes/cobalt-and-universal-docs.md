@@ -3,6 +3,9 @@ tags: Hope
 ---
 # WIP: Cobalt and universal documents
 
+[![hackmd-github-sync-badge](https://hackmd.io/zyVnPfOORWm0yrb8bakjew/badge)](https://hackmd.io/zyVnPfOORWm0yrb8bakjew)
+
+
 [Cobalt](https://github.com/poef/cobalt/) is an attempt to write a markup language the way Ted Nelson suggests - using an [Edit Decision List (EDL)](https://en.wikipedia.org/wiki/Edit_decision_list). It is an evolution from an earlier attempt, called [Hope](https://poef.github.io/hope/). I've worked on this of and on for about 8 years. Hope is in fact in use, as the core of [SimplyEdit](https://simplyedit.io), which is a product my company makes.
 
 A cobalt document currently is a combination of different documents, glued together using mime encoding. There is no way to interpret this format unless you already know the format. However in ['A New Hope'](https://hackmd.io/kafpxBeqQua_rcrncP14tQ) I stated that in the future all documents (or all information) will not need an application or specific code to interpret it. Just like the web today, all information should come with all the code that it needs to display and interact with it.
