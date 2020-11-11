@@ -3,6 +3,9 @@ tags: Experiments
 ---
 # Implementation Notes for a Universal Application Environment Experiment in the Browser
 
+[![hackmd-github-sync-badge](https://hackmd.io/LlK6dyblRfiDmJH0r4L5aA/badge)](https://hackmd.io/LlK6dyblRfiDmJH0r4L5aA)
+
+
 This aims to create an implementation of a universal document with the web browser as the basic application environment. What can we re-use, what must be added?
 
 ## Use iframes to embed other applications.
