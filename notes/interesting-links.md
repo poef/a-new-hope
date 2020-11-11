@@ -3,6 +3,9 @@ tags: Hope
 ---
 # Interesting Links
 
+[![hackmd-github-sync-badge](https://hackmd.io/beVS8KuiTTKFVPeLD4-t-A/badge)](https://hackmd.io/beVS8KuiTTKFVPeLD4-t-A)
+
+
 - [Programs are a prison](https://djrobstep.com/posts/programs-are-a-prison) - [hackernews discussion](https://news.ycombinator.com/item?id=24999103)
 - [Membrane.io](//membrane.io) - [Blog post](https://medium.com/@juancampa/web-apis-game-engines-and-the-universal-inspect-button-4c49eac1073c)
 - [Hope](//poef.github.io/hope/) and [Cobalt](//github.com/poef/cobalt/)
