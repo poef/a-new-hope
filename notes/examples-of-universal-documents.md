@@ -3,6 +3,9 @@ tags: Hope
 ---
 # Examples of universal documents
 
+[![hackmd-github-sync-badge](https://hackmd.io/IZxJlcT-SBa_PneBZ02AMA/badge)](https://hackmd.io/IZxJlcT-SBa_PneBZ02AMA)
+
+
 ## A Chess Game
 
 A chess game is an example of an ephemeral application, its contents change over time. Untill the moment the chess game is finished, then its contents are fixed.
