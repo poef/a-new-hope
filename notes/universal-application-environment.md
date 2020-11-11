@@ -3,6 +3,9 @@ tags: Hope
 ---
 # WIP: Universal Application Environment
 
+[![hackmd-github-sync-badge](https://hackmd.io/2c2ebksJRWaE-eusDYC0Pg/badge)](https://hackmd.io/2c2ebksJRWaE-eusDYC0Pg)
+
+
 To build a Universal Document, we need a universal application environment. A universal document is also an application. There is no distinction. You don't need an app to read/show/interact with a universal document.
 
 For the first version of universal documents, we choose to use the web browser as a bootstrap environment, and IPFS and IPNS as storage.
