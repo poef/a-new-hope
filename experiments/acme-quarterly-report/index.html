@@ -1,0 +1,18 @@
+<script src="script.js" type="module" defer></script><!--
+    For now this is just an html document as well
+-->
+<h1>Acme Quarterly Report</h1>
+<p>This is an experiment to see if we can turn the browser into a universal
+application environment using iframes. Each iframe, and the host document is 
+a universal document. Each document can communicate with its parent and
+children, using the postMessage api.</p>
+
+<h2>Results</h2>
+<iframe name="visualization" data-uae-seamless sandbox="allow-scripts
+allow-same-origin" src="visualization/"></iframe>
+<iframe name="control" data-uae-seamless sandbox="allow-scripts
+allow-same-origin" src="controls/"></iframe>
+
+<h2>Data</h2>
+<iframe name="spreadsheet" data-uae-seamless sandbox="allow-scripts
+allow-same-origin" src="spreadsheet/"></iframe>
