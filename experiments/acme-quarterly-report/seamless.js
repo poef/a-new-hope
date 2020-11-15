@@ -28,6 +28,7 @@ body {
 
 export const seamless = {
     report: function() {
+        // FIXME: this should handle the bus as well
         let size = document.body.getBoundingClientRect();
         return {width:Math.ceil(size.width),height:Math.ceil(size.height)};
     },
@@ -38,7 +39,7 @@ export const seamless = {
             frame.addEventListener(
                 'load',
                 e => bus.publish(
-                    'seamless-request-size',
+                    '/x/uae/seamless/request-size',
                     {
                         'max-size': {
                             width: size.width-buffer
@@ -54,7 +55,7 @@ export const seamless = {
 let size = seamless.report();
 let buffer=10;
 
-bus.subscribe('seamless-request-size', function(event) {
+bus.subscribe('/x/uae/seamless/request-size', function(event) {
     // a parent document asks for our size
     let maxSize = event.data.message['max-size'];
     let maxWidth = maxSize.width ? maxSize.width+'px' : 'unset';
@@ -66,7 +67,7 @@ body {
 }
 `);
     bus.publish(
-        'seamless-report-size', 
+        '/x/uae/seamless/report-size', 
         {
             size: seamless.report(),
             frame: event.data.target
@@ -75,7 +76,7 @@ body {
     );
 });
 
-bus.subscribe('seamless-report-size', function(event) {
+bus.subscribe('/x/uae/seamless/report-size', function(event) {
     // a child document is returning its size
     let message = event.data.message;
     let frame = document.querySelector('iframe[name="'+message.frame+'"]');

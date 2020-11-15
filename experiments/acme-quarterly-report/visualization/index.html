@@ -44,8 +44,9 @@
       yourVlSpec.data.values = e.data.message.matrix;
       vegaEmbed('#vis', yourVlSpec);
       window.setTimeout(function() {
+        //FIXME: seamless.report() should do the bus messaging
         var size = seamless.report();
-        bus.publish('seamless-report-size', {
+        bus.publish('/x/uae/seamless/report-size', {
           size: size,
           frame: evt.data.target
         }, evt.source);
