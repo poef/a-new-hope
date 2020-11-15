@@ -39,7 +39,8 @@
   
   bus.subscribe('/x/uae/connect', evt => {
     dataChannel = channel[evt.data.message.name];
-
+//    dataChannel.debug = true;
+    
     dataChannel.subscribe('/x/spreadsheet/matrix', e => {
       yourVlSpec.data.values = e.data.message.matrix;
       vegaEmbed('#vis', yourVlSpec);

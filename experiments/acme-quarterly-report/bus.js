@@ -37,7 +37,7 @@ function getTarget(target) {
 }
 
 export const bus = {
-    debug: true,
+    debug: false,
     subscribe: function(messageName, callback, target='*') {
         if (!subscriptions[messageName]) {
             subscriptions[messageName] = [];
@@ -54,6 +54,10 @@ export const bus = {
     },
     publish: function(messageName, message, target=null, transfer=[]) {
         target = getTarget(target);
+        if (bus.debug) {
+            let source = window.name;
+            console.log('bus:', '['+(source?source:'host')+' -> '+target.name+']', messageName, message);
+        }
         let w;
         if (target.contentWindow) {
             w = target.contentWindow;

@@ -3,6 +3,7 @@ import { seamless } from './seamless.js';
 import { channel } from './channel.js';
 
 window.bus = bus;
+bus.debug = true;
 window.seamless = seamless;
 window.channel = channel;
 

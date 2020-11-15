@@ -99,7 +99,8 @@ bus.subscribe('/x/spreadsheet/get/row', e => {
 let dataChannel = null;
 bus.subscribe('/x/uae/connect', e => {
     dataChannel = channel[e.data.message.name];
-
+    dataChannel.debug = true;
+    
     dataChannel.subscribe('/x/spreadsheet/get/matrix', e => {
         dataChannel.publish('/x/spreadsheet/matrix', {
             matrix: api.getMatrix()
