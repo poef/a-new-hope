@@ -15,22 +15,22 @@ window.addEventListener('load', function() {
             let channel = new MessageChannel();
             bus.subscribe('/x/uae/connect-ready', e => {
                 bus.publish('/x/uae/connect-ready', {
-                    name: channelName
+                    name: channelName+'[1]'
                 }, target);
             }, f);
             
             bus.subscribe('/x/uae/connect-ready', e => {
                 bus.publish('/x/uae/connect-ready', {
-                    name: channelName
+                    name: channelName+'[2]'
                 }, f);
             }, target);
             
             bus.publish('/x/uae/connect', {
-                name: channelName
+                name: channelName+'[1]'
             }, f, [channel.port1]);
             
             bus.publish('/x/uae/connect', {
-                name: channelName
+                name: channelName+'[2]'
             }, target, [channel.port2]);
         }
     });

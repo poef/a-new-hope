@@ -7,8 +7,10 @@ bus.subscribe('/x/uae/connect', e => {
 });
 
 function Channel(port, channelName) {
+    this.debug = true;
     this.port = port;
     this.subscriptions = {};
+    this.channelName = channelName;
     this.port.onmessage = e => {
         if (e.data && e.data.name && this.subscriptions[e.data.name]) {
             this.subscriptions[e.data.name].forEach(f => f(e));
@@ -26,6 +28,9 @@ Channel.prototype.subscribe = function(messageName, callback) {
 }
 
 Channel.prototype.publish = function(messageName, data, transfer=[]) {
+    if (this.debug) {
+        console.log('channel:', this.channelName, messageName, data);
+    }
     this.port.postMessage({
         name: messageName,
         message: data
