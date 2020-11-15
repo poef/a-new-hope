@@ -1,0 +1,63 @@
+<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+<style>
+  .vega-embed .chart-wrapper {
+    height: auto !important;
+    width: auto !important;
+  }
+</style>
+<div id="vis"></div>
+<script>
+  var yourVlSpec = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
+    description: 'A simple bar chart with embedded data.',
+    data: {
+      values: [
+      ]
+    },
+    format: 'json',
+    mark: 'bar',
+    encoding: {
+      x: {
+        field: 'month', type: 'ordinal', title: 'Month', timeUnit: 'month'
+      },
+      y: {
+        field: 'Acme Boxes', type: 'quantitative'        
+      }
+    }
+  };
+  vegaEmbed('#vis', yourVlSpec);
+</script>
+<script type="module">
+  import { bus } from '../bus.js';
+  import { seamless } from '../seamless.js';  
+  import { channel } from '../channel.js';
+
+  let dataChannel = null;
+  let size = null;
+  
+  bus.subscribe('/x/uae/connect', evt => {
+    dataChannel = channel[evt.data.message.name];
+
+    dataChannel.subscribe('/x/spreadsheet/matrix', e => {
+      yourVlSpec.data.values = e.data.message.matrix;
+      vegaEmbed('#vis', yourVlSpec);
+      window.setTimeout(function() {
+        var size = seamless.report();
+        bus.publish('seamless-report-size', {
+          size: size,
+          frame: evt.data.target
+        }, evt.source);
+      });
+    });
+    
+    bus.publish('/x/uae/connect-ready', {
+      name: evt.data.message.name
+    }, evt.source);
+  });
+  
+  bus.subscribe('/x/uae/connect-ready', evt => {
+    dataChannel.publish('/x/spreadsheet/get/matrix', {});
+  });
+</script>
