@@ -1,5 +1,5 @@
 window.addEventListener('message', function(event) {
-    let name = event.data.name;
+    var name = event.data.name;
     if (name && subscriptions[name]) {
         subscriptions[name].forEach(c => c(event));
     }
@@ -19,7 +19,10 @@ export const bus = {
         if (!subscriptions[messageName]) { return }
         subscriptions[messagename] = subscriptions[messageName].filter(c => c==callback);
     },
-    publish: function(messageName, message, target) {
+    publish: function(messageName, message, target=null, transfer=[]) {
+        if (!target) {
+            target = host;
+        }
         let w,n;
         if (typeof target == 'string') {
             n = target;
@@ -43,7 +46,7 @@ export const bus = {
             origin: ''+window.location.href,
             target: target.name,
             message: message
-        }, "*");
+        }, "*", transfer);
     }
 };
 
