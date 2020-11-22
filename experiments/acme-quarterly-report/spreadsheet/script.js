@@ -41,6 +41,11 @@ INPUTS.forEach(function(elm) {
 });
 (window.computeAll = function() {
     INPUTS.forEach(function(elm) { try { elm.value = DATA[elm.id]; } catch(e) {} });
+    if (window.dataChannel) {
+        dataChannel.publish('/x/spreadsheet/table', {
+            table: api.getTable()
+        });
+    }
 })();
 
 export const api = {
@@ -61,7 +66,7 @@ export const api = {
     getRow: function(index) {
         var result = [];
         var letter;
-        for (var i=0;i<cols;i++) {
+        for (var i=1;i<cols;i++) {
             letter = String.fromCharCode("A".charCodeAt(0)+i-1);
             result.push(DATA[letter+index]);
         }
@@ -72,13 +77,21 @@ export const api = {
         let rowLabels = api.getColumn(1);
         let result = [];
         let size = api.getSize();
-        for (var y=2;y<size.rows;y++) {
+        for (var y=2;y<=size.rows;y++) {
             let record = {};
             let row = api.getRow(y);
             for (var x=1;x<=size.cols;x++) {
                 record[columns[x]] = row[x]; 
             }
             result.push(record);
+        }
+        return result;
+    },
+    getTable: function() {
+        let size = api.getSize();
+        let result = [];
+        for (var y=1;y<=size.rows;y++) {
+            result.push(api.getRow(y));
         }
         return result;
     }
@@ -96,7 +109,7 @@ bus.subscribe('/x/spreadsheet/get/row', e => {
     bus.publish('/x/spreadsheet/row', api.getRow(), event.source);
 });
 
-let dataChannel = null;
+window.dataChannel = null;
 bus.subscribe('/x/uae/connect', e => {
     dataChannel = channel[e.data.message.name];
     dataChannel.debug = true;
@@ -107,6 +120,12 @@ bus.subscribe('/x/uae/connect', e => {
         });
     });
     
+    dataChannel.subscribe('/x/spreadsheet/get/table', e => {
+        dataChannel.publish('/x/spreadsheet/table', {
+            table: api.getTable()
+        });
+    });
+
     bus.publish('/x/uae/connect-ready', {
         name: e.data.message.name
     }, e.source);

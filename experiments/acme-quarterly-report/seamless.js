@@ -34,8 +34,18 @@ export const seamless = {
     },
     resize: function() {
         let size = seamless.report();
+        console.log('resize', size);
         Array.from(document.querySelectorAll('iframe[data-uae-seamless]'))
         .forEach(frame => {
+            bus.publish(
+                '/x/uae/seamless/request-size',
+                {
+                    'max-size': {
+                        width: size.width-buffer
+                    }
+                }, 
+                frame
+            );
             frame.addEventListener(
                 'load',
                 e => bus.publish(
@@ -86,5 +96,15 @@ bus.subscribe('/x/uae/seamless/report-size', function(event) {
     }
 });
 
+const debounce = (func, delay) => {
+  let inDebounce
+  return function() {
+    const context = this
+    const args = arguments
+    clearTimeout(inDebounce)
+    inDebounce = setTimeout(() => func.apply(context, args), delay)
+  }
+}
+
 seamless.resize();
-window.onresize = seamless.resize;
+window.addEventListener('resize', debounce(seamless.resize, 250));

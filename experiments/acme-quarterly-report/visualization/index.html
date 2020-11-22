@@ -1,34 +1,39 @@
-<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
-<script src="https://cdn.jsdelivr.net/npm/vega-lite@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
-<style>
-  .vega-embed .chart-wrapper {
-    height: auto !important;
-    width: auto !important;
-  }
-</style>
-<div id="vis"></div>
-<script>
-  var yourVlSpec = {
-    $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
-    description: 'A simple bar chart with embedded data.',
-    data: {
-      values: [
-      ]
-    },
-    format: 'json',
-    mark: 'bar',
-    encoding: {
-      x: {
-        field: 'month', type: 'ordinal', title: 'Month', timeUnit: 'month'
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+  google.charts.load('current', {'packages':['bar']});
+  let data = [];
+  function drawChart() {
+    if (!data || !data.length) {
+      return;
+    }
+    var options = {
+      chart: {
+        title: 'Company Performance',
+        subtitle: 'Profit by Month, 2020'
       },
-      y: {
-        field: 'Acme Boxes', type: 'quantitative'        
+      width: '100%',
+      height: '100%',
+      chartArea: {
+        height: "100%",
+        width: "100%"
       }
     }
-  };
-  vegaEmbed('#vis', yourVlSpec);
+    var chart = new google.charts.Bar(document.getElementById('chart'));
+    chart.draw(google.visualization.arrayToDataTable(data), google.charts.Bar.convertOptions(options));
+  }
+  function updateChart(dataIn) {
+    data = dataIn;
+    drawChart();
+  }
 </script>
+<style>
+  #chart {
+    width: 100%;
+    height: 100%;
+  }
+</style>
+<div id="chart"></div>
+
 <script type="module">
   import { bus } from '../bus.js';
   import { seamless } from '../seamless.js';  
@@ -36,22 +41,18 @@
 
   let dataChannel = null;
   let size = null;
-  
+  let maxChartWidth = 800;
+  let maxChartHeight = 400;
+  document.body.style.width = maxChartWidth+'px';
+  document.body.style.height = maxChartHeight+'px';
+
   bus.subscribe('/x/uae/connect', evt => {
     dataChannel = channel[evt.data.message.name];
 //    dataChannel.debug = true;
     
-    dataChannel.subscribe('/x/spreadsheet/matrix', e => {
-      yourVlSpec.data.values = e.data.message.matrix;
-      vegaEmbed('#vis', yourVlSpec);
-      window.setTimeout(function() {
-        //FIXME: seamless.report() should do the bus messaging
-        var size = seamless.report();
-        bus.publish('/x/uae/seamless/report-size', {
-          size: size,
-          frame: evt.data.target
-        }, evt.source);
-      });
+    dataChannel.subscribe('/x/spreadsheet/table', e => {
+      updateChart(e.data.message.table);
+      reportSize(evt);
     });
     
     bus.publish('/x/uae/connect-ready', {
@@ -60,6 +61,27 @@
   });
   
   bus.subscribe('/x/uae/connect-ready', evt => {
-    dataChannel.publish('/x/spreadsheet/get/matrix', {});
+    dataChannel.publish('/x/spreadsheet/get/table', {});
   });
+
+  bus.subscribe('/x/uae/seamless/request-size', evt => {
+    let size = evt.data.message['max-size'];
+    if (size.width) {
+      let maxWidth = Math.min(maxChartWidth, size.width);
+      document.body.style['width'] = maxWidth+'px';
+      drawChart();
+      reportSize(evt);
+    }
+  })
+
+  function reportSize(evt) {
+    window.setTimeout(function() {
+      //FIXME: seamless.report() should do the bus messaging
+      var size = seamless.report();
+      bus.publish('/x/uae/seamless/report-size', {
+        size: size,
+        frame: evt.data.target
+      }, evt.source);
+    });
+  }
 </script>

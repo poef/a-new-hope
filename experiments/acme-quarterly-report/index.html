@@ -1,18 +1,41 @@
 <script src="script.js" type="module" defer></script><!--
     For now this is just an html document as well
 -->
-<h1>Acme Quarterly Report</h1>
-<p>This is an experiment to see if we can turn the browser into a universal
-application environment using iframes. Each iframe, and the host document is 
-a universal document. Each document can communicate with its parent and
-children, using the postMessage api.</p>
+<link rel="stylesheet" href="styles.css">
+<style>
+	@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,500;1,300;1,500&family=Ubuntu:wght@400;700&display=swap');
+	:root {
+	    --ds-body-font: Roboto, sans-serif;
+	    --ds-heading-font: "Ubuntu", Helvetica, Arial, sans-serif;
+	}
+	html {
+	}
+	body {
+		width: 100% !important;
+		background: linear-gradient(to left, #BBB, #ddd);
+	}
+	main {
+		max-width: 996px;
+		margin: 1em auto;
+		background: white;
+		padding: 1em;
+		box-shadow: var(--ds-shadow-large);
+	}
+</style>
+<main>
+	<h1>Acme Quarterly Report</h1>
+	<p>This is an experiment to see if we can turn the browser into a universal
+	application environment using iframes. Each iframe, and the host document is 
+	a universal document. Each document can communicate with its parent and
+	children, using the postMessage api.</p>
 
-<h2>Results</h2>
-<iframe name="visualization" data-uae-seamless sandbox="allow-scripts
-allow-same-origin" src="visualization/" data-uae-connect="spreadsheet"></iframe>
-<iframe name="control" data-uae-seamless sandbox="allow-scripts
-allow-same-origin" src="control/"></iframe>
+	<h2>Results</h2>
+	<iframe name="visualization" data-uae-seamless sandbox="allow-scripts
+	allow-same-origin" src="visualization/" data-uae-connect="spreadsheet"></iframe>
+	<iframe name="control" data-uae-seamless sandbox="allow-scripts
+	allow-same-origin" src="control/"></iframe>
 
-<h2>Data</h2>
-<iframe name="spreadsheet" data-uae-seamless sandbox="allow-scripts
-allow-same-origin" src="spreadsheet/"></iframe>
+	<h2>Data</h2>
+	<iframe name="spreadsheet" data-uae-seamless sandbox="allow-scripts
+	allow-same-origin" src="spreadsheet/"></iframe>
+</main>
