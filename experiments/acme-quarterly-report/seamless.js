@@ -13,6 +13,7 @@ iframe[data-uae-seamless] {
     overflow: hidden;
     padding: 0;
     margin: 0;
+    max-width: 100%;
 }
 html {
     margin: 0;
@@ -26,14 +27,25 @@ body {
 }
 `);
 
+let size = {};
+let buffer=16;
+
+function getSize() {
+    let rect = document.body.getBoundingClientRect();
+    return {width:Math.ceil(rect.width),height:Math.ceil(rect.height)};
+}
+
 export const seamless = {
-    report: function() {
-        // FIXME: this should handle the bus as well
-        let size = document.body.getBoundingClientRect();
-        return {width:Math.ceil(size.width),height:Math.ceil(size.height)};
+    report: function(frame) {
+        size = getSize();
+        bus.publish('/x/uae/seamless/report-size', {
+            size: size,
+            frame: frame ? frame : window.name
+        });
+        return size;
     },
     resize: function() {
-        let size = seamless.report();
+        size = getSize();
         console.log('resize', size);
         Array.from(document.querySelectorAll('iframe[data-uae-seamless]'))
         .forEach(frame => {
@@ -62,8 +74,6 @@ export const seamless = {
     }
 }
 
-let size = seamless.report();
-let buffer=10;
 
 bus.subscribe('/x/uae/seamless/request-size', function(event) {
     // a parent document asks for our size
@@ -76,14 +86,7 @@ body {
     max-height: ${maxHeight};
 }
 `);
-    bus.publish(
-        '/x/uae/seamless/report-size', 
-        {
-            size: seamless.report(),
-            frame: event.data.target
-        }, 
-        event.source
-    );
+    seamless.report(event.data.target);
 });
 
 bus.subscribe('/x/uae/seamless/report-size', function(event) {

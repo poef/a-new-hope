@@ -1,7 +1,16 @@
+let subscriptions = {};
+let host = null;
+
 window.addEventListener('message', function(event) {
     var name = event.data.name;
     var target = event.data.target ? event.data.target : 'host';
     var source = event.data.source;
+    if (!window.name && event.data.target) {
+        window.name = event.data.target;
+    }
+    if (!host && event.source) {
+        host = event.source;
+    }
     if (bus.debug) {
         console.log('bus:', '['+(source?source:'host')+' -> '+target+']', name, event.data.message);
     }
@@ -14,8 +23,6 @@ window.addEventListener('message', function(event) {
     }
 });
 
-let subscriptions = {};
-let host = null;
 
 function getTarget(target) {
     if (!target) {
