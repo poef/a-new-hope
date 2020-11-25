@@ -1,5 +1,6 @@
 {
   "name": "spreadsheet2",
+  "homepage": "/a-new-hope/experiments/acme-quarterly-report/spreadsheet2/build/",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

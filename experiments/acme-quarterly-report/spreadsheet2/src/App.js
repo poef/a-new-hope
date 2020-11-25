@@ -3,9 +3,6 @@ import './App.css';
 import DataGrid from 'react-data-grid';
 import 'react-data-grid/dist/react-data-grid.css';
 
-import bus from './bus.js';
-bus.initialize();
-
 let columns=[
     {key: 'month', name: 'Month'},
     {key: 'acme_boxes', name: 'Acme Boxes'},

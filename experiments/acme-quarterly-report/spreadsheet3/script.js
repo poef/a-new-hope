@@ -33,7 +33,8 @@ function loadData() {
     return {};
 }
 
-let sheet = {};
+let sheet = null;
+let readyCallbacks = [];
 
 function init() {
     Promise.all([
@@ -42,17 +43,31 @@ function init() {
         loadStylesheet('https://bossanova.uk/jexcel/v4/jexcel.css'),
         loadStylesheet('https://bossanova.uk/jsuites/v3/jsuites.css')
     ]).then(e => {
-//        window.setTimeout(() => {
-            let spreadsheet = document.createElement('div');
-            spreadsheet.id="jExcelRoot";
-            document.body.appendChild(spreadsheet);
-            sheet = jexcel(spreadsheet, loadData());
-            seamless.report();
-//        }, 100);
+        let spreadsheet = document.createElement('div');
+        spreadsheet.id="jExcelRoot";
+        document.body.appendChild(spreadsheet);
+        sheet = jexcel(spreadsheet, loadData());
+        seamless.report();
+        readyCallbacks.forEach(f => f());
+        readyCallbacks = [];
     });
 }
 
 init();
+
+function apiReady() {
+    if (sheet) {
+        return new Promise(resolve => {
+            resolve();
+        });
+    } else {
+        return new Promise(resolve => {
+            readyCallbacks.push(f => {
+                resolve();
+            });
+        });
+    }
+}
 
 export const api = {
     getTable: function() {
@@ -64,17 +79,19 @@ export const api = {
 };
 
 window.dataChannel = null;
-bus.subscribe('/x/uae/connect', e => {
+bus.subscribe('/x/uae/channel/connect/', e => {
     dataChannel = channel[e.data.message.name];
     dataChannel.debug = true;
        
     dataChannel.subscribe('/x/spreadsheet/get/table', e => {
-        dataChannel.publish('/x/spreadsheet/table', {
-            table: api.getTable()
+        apiReady().then(() => {
+            dataChannel.publish('/x/spreadsheet/table', {
+                table: api.getTable()
+            });
         });
     });
 
-    bus.publish('/x/uae/connect-ready', {
+    bus.publish('/x/uae/channel/connect/ready/', {
         name: e.data.message.name
     }, e.source);
 });

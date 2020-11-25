@@ -37,16 +37,16 @@ function getSize() {
 
 export const seamless = {
     report: function(frame) {
-        size = getSize();
-        bus.publish('/x/uae/seamless/report-size', {
-            size: size,
-            frame: frame ? frame : window.name
+        return bus.hosted().then(() => {
+            size = getSize();
+            bus.publish('/x/uae/seamless/report-size', {
+                size: size,
+                frame: frame ? frame : window.name
+            });
         });
-        return size;
     },
     resize: function() {
         size = getSize();
-        console.log('resize', size);
         Array.from(document.querySelectorAll('iframe[data-uae-seamless]'))
         .forEach(frame => {
             bus.publish(
@@ -94,9 +94,14 @@ bus.subscribe('/x/uae/seamless/report-size', function(event) {
     let message = event.data.message;
     let frame = document.querySelector('iframe[name="'+message.frame+'"]');
     if (frame) {
-        frame.style.width  = Math.ceil(message.size.width+buffer)+'px';
-        frame.style.height = Math.ceil(message.size.height+buffer)+'px';
+        if (message.size.width) {
+            frame.style.width  = Math.ceil(message.size.width+buffer)+'px';
+        }
+        if (message.size.height) {
+            frame.style.height = Math.ceil(message.size.height+buffer)+'px';
+        }
     }
+    seamless.report();
 });
 
 const debounce = (func, delay) => {

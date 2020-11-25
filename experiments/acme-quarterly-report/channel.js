@@ -2,7 +2,7 @@ import { bus } from './bus.js';
 
 export var channel = {};
 
-bus.subscribe('/x/uae/connect', e => {
+bus.subscribe('/x/uae/channel/connect/', e => {
     channel[e.data.message.name] = new Channel(e.ports[0], e.data.message.name);
 });
 

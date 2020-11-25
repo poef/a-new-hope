@@ -46,21 +46,21 @@
   document.body.style.width = maxChartWidth+'px';
   document.body.style.height = maxChartHeight+'px';
 
-  bus.subscribe('/x/uae/connect', evt => {
+  bus.subscribe('/x/uae/channel/connect/', evt => {
     dataChannel = channel[evt.data.message.name];
 //    dataChannel.debug = true;
     
     dataChannel.subscribe('/x/spreadsheet/table', e => {
       updateChart(e.data.message.table);
-      reportSize(evt);
+      reportSize();
     });
     
-    bus.publish('/x/uae/connect-ready', {
+    bus.publish('/x/uae/channel/connect/ready/', {
       name: evt.data.message.name
     }, evt.source);
   });
   
-  bus.subscribe('/x/uae/connect-ready', evt => {
+  bus.subscribe('/x/uae/channel/connect/ready/', evt => {
     dataChannel.publish('/x/spreadsheet/get/table', {});
   });
 
@@ -70,18 +70,13 @@
       let maxWidth = Math.min(maxChartWidth, size.width);
       document.body.style['width'] = maxWidth+'px';
       drawChart();
-      reportSize(evt);
+      reportSize();
     }
   })
 
-  function reportSize(evt) {
+  function reportSize() {
     window.setTimeout(function() {
-      //FIXME: seamless.report() should do the bus messaging
-      var size = seamless.report();
-      bus.publish('/x/uae/seamless/report-size', {
-        size: size,
-        frame: evt.data.target
-      }, evt.source);
+      seamless.report();
     });
   }
 </script>
