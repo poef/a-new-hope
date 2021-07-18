@@ -1,11 +1,30 @@
 import { bus } from './hope.bus.js';
 import { seamless } from './hope.seamless.js';
 
+class HopeDoc {
+	constructor(frame, name) {
+		this.frame = frame;
+		this.name  = name;
+	}
+
+	api(api) {
+		let self = this;
+		let apiHandler = function(api) ({
+			get: function(obj, prop) {
+				return new Proxy({}, apiHandler(api+prop+'/')); //@FIXME: handle missing end '/' in api
+			},
+			apply: function(obj, thisArg, params) {
+				return bus.call(self.frame, api, params);
+			}
+		};
+		return new Proxy({}, apiHandler(api));
+	}
+};
+
+
 document.hope = (function() {
 	var hopeDocuments = {};
-
-	bus.init();
-	seamless.init(bus);
+	var hopeDocumentsByName = {};
 
 	/**
 	 * This function is the mutation observer callback that listens for any nodes added or removed
@@ -22,56 +41,71 @@ document.hope = (function() {
             if (change.type=='childList') {
                 [].forEach.call(change.addedNodes, node => {
                     if (node.querySelectorAll) {
-                        [].slice.call(node.querySelectorAll('iframe[data-hope-name]'))
-                        	.forEach(hopeDoc => addDocument(hopeDoc));
+                        [].slice.call(node.querySelectorAll('iframe'))
+                        	.forEach(frame => addDocument(frame));
                     }
                 });
                 [].forEach.call(change.removedNodes, node => {
                 	if (node.querySelectorAll) {
-                		[].slice.call(node.querySelectorAll('iframe[data-hope-name]'))
-                			.forEach(hopeDoc => removeDocument(hopeDoc));
+                		[].slice.call(node.querySelectorAll('iframe'))
+                			.forEach(frame => removeDocument(frame));
                 	}
                 });
             }
         }
    	};
 
-   	var addDocument = function(hopeDoc) {
-    	let name = hopeDoc.dataset.hopeName;
+   	var addDocument = function(frame) {
+    	let name = frame.name;
     	if (!name) {
-    		name = 'hope_'+Object.keys(hopeDocuments).length+1;
-    		hopeDoc.dataset.hopeName = name;
+    		name = 'hope_'+Object.keys(hopeDocumentsByName).length+1;
+    		frame.name = name;
     	}
+   		let hopeDoc = new HopeDoc(frame, name);
+
     	bus.connect(hopeDoc); // must notify listeners in this document that a new document has entered the dom
     	seamless.connect(hopeDoc);
-    	if (Array.isArray(hopeDocuments[name])) {
-    		hopeDocuments[name].push(hopeDoc);
-    	} else if (typeof hopeDocuments[name] !== 'undefined') {
+    	if (Array.isArray(hopeDocumentsByName[name])) {
+    		hopeDocumentsByName[name].push(hopeDoc);
+    	} else if (typeof hopeDocumentsByName[name] !== 'undefined') {
     		// duplicate name
-    		hopeDocuments[name] = [
-    			hopeDocuments[name],
+    		hopeDocumentsByName[name] = [
+    			hopeDocumentsByName[name],
     			hopeDoc
     		];
     	} else {
-    		hopeDocuments[name] = hopeDoc;
+    		hopeDocumentsByName[name] = hopeDoc;
     	}
+    	hopeDocuments.push(hopeDoc);
    	};
 
-   	var removeDocument = function(hopeDoc) {
-		let name = hopeDoc.dataset.hopeName;
+   	var removeDocument = function(frame) {
+		let hopeDoc = hopeDocuments.filter(doc => doc.frame == frame).pop();
+		if (!hopeDoc) {
+			//@TODO: throw error? or ignore silently?
+		}
 		seamless.disconnect(hopeDoc);
 		bus.disconnect(hopeDoc); // @TODO: must trigger errors for listeners that are waiting for a response from this document
-		if (Array.isArray(hopeDocuments[name])) {
-			hopeDocuments[name] = hopeDocuments[name].filter(doc => doc == hopeDoc);
-			if (hopeDocuments[name].length === 1) {
-				hopeDocuments[name] = hopeDocuments[name].pop();
-			} else if (hopeDocuments[name].length === 0) {
-				delete hopeDocuments[name];
+		if (Array.isArray(hopeDocumentsByName[name])) {
+			hopeDocumentsByName[name] = hopeDocumentsByName[name].filter(doc => doc.frame == hopeDoc.frame);
+			if (hopeDocumentsByName[name].length === 1) {
+				hopeDocumentsByName[name] = hopeDocumentsByName[name].pop();
+			} else if (hopeDocumentsByName[name].length === 0) {
+				delete hopeDocumentsByName[name];
 			}
 		} else {
-			delete hopeDocuments[name];
+			delete hopeDocumentsByName[name];
 		}
+		hopeDocuments = hopeDocuments.filter(doc => doc.frame == hopeDoc.frame);
    	};
+
+   	// add all existing hope documents
+   	[].forEach.call(document.querySelectorAll('iframe[data-hope-name]'), frame => {
+   		addDocument(frame);
+   	});
+
+	bus.init();
+	seamless.init(bus);
 
 	var observer = new MutationObserver(handleChanges);
 	observer.observe(document, {
@@ -80,6 +114,7 @@ document.hope = (function() {
 	});
 
 	return {
+		documentsByName: hopeDocumentsByName,
 		documents: hopeDocuments,
 		bus: bus
 	}
