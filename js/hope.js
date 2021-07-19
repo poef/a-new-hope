@@ -14,7 +14,7 @@ class HopeDoc {
 				return new Proxy({}, apiHandler(api+prop+'/')); //@FIXME: handle missing end '/' in api
 			},
 			apply: function(obj, thisArg, params) {
-				return bus.call(self.frame, api, params);
+				return bus.call(api, params, self.frame);
 			}
 		};
 		return new Proxy({}, apiHandler(api));
@@ -24,7 +24,6 @@ class HopeDoc {
 
 document.hope = (function() {
 	var hopeDocuments = {};
-	var hopeDocumentsByName = {};
 
 	/**
 	 * This function is the mutation observer callback that listens for any nodes added or removed
@@ -58,25 +57,18 @@ document.hope = (function() {
    	var addDocument = function(frame) {
     	let name = frame.name;
     	if (!name) {
-    		name = 'hope_'+Object.keys(hopeDocumentsByName).length+1;
+    		name = 'hope_'+Object.keys(hopeDocuments).length+1;
     		frame.name = name;
     	}
    		let hopeDoc = new HopeDoc(frame, name);
 
     	bus.connect(hopeDoc); // must notify listeners in this document that a new document has entered the dom
     	seamless.connect(hopeDoc);
-    	if (Array.isArray(hopeDocumentsByName[name])) {
-    		hopeDocumentsByName[name].push(hopeDoc);
-    	} else if (typeof hopeDocumentsByName[name] !== 'undefined') {
-    		// duplicate name
-    		hopeDocumentsByName[name] = [
-    			hopeDocumentsByName[name],
-    			hopeDoc
-    		];
-    	} else {
-    		hopeDocumentsByName[name] = hopeDoc;
+    	if (typeof hopeDocuments[name] !== 'undefined') {
+    		name = name + '_' + Object.keys(hopeDocuments).length+1;
+    		frame.name = name;
     	}
-    	hopeDocuments.push(hopeDoc);
+   		hopeDocuments[name] = hopeDoc;
    	};
 
    	var removeDocument = function(frame) {
@@ -86,17 +78,7 @@ document.hope = (function() {
 		}
 		seamless.disconnect(hopeDoc);
 		bus.disconnect(hopeDoc); // @TODO: must trigger errors for listeners that are waiting for a response from this document
-		if (Array.isArray(hopeDocumentsByName[name])) {
-			hopeDocumentsByName[name] = hopeDocumentsByName[name].filter(doc => doc.frame == hopeDoc.frame);
-			if (hopeDocumentsByName[name].length === 1) {
-				hopeDocumentsByName[name] = hopeDocumentsByName[name].pop();
-			} else if (hopeDocumentsByName[name].length === 0) {
-				delete hopeDocumentsByName[name];
-			}
-		} else {
-			delete hopeDocumentsByName[name];
-		}
-		hopeDocuments = hopeDocuments.filter(doc => doc.frame == hopeDoc.frame);
+		delete hopeDocuments[name];
    	};
 
    	// add all existing hope documents
@@ -114,7 +96,7 @@ document.hope = (function() {
 	});
 
 	return {
-		documentsByName: hopeDocumentsByName,
+		documentsByName: hopeDocuments,
 		documents: hopeDocuments,
 		bus: bus
 	}
