@@ -15,7 +15,6 @@ let host = null;
  */
 let hostedCallbacks = [];
 
-
 /**
  * both subscribe and publish accept a target name or a target frame
  * this function resolves that to a target name. A special target is
@@ -144,6 +143,39 @@ export const bus = {
             source: window.name,
             message: message
         }, "*", transfer);
+    },
+    /**
+     * Sends a message to the target and returns a Promise that is
+     * triggered when a reply to this exact message is received.
+     */
+    call: function(messageName, message, target=null, transfer=[]) {
+        //@TODO: datastructure is now not optimized to handle call/reply-once 
+        //but this will probably be the main use, so this is a candidate for
+        //performance optimization.
+        message.id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+        return new Promise(function(resolve, reject) {
+            let resolved = false;
+            let resolver = event => {
+                if (event.data.replyTo==message.id) {
+                    resolved = true;
+                    resolve(event.data);
+                }
+            };
+            window.setTimeout(() => {
+                if (!resolved) {
+                    bus.unsubscribe(messaName, resolver, target);
+                    reject(new Error('message reply timeout'));
+                }
+            }, 10000); // timeout is 10 seconds. @TODO: turn into an option/parameter?
+            bus.subscribe(messageName, resolver, target);
+        });
+    },
+    /**
+     * Send a reply to an incoming message.
+     */
+    reply: function(sourceMessageId, sourceMessageName, replyMessage, target=null, transfer=[]) {
+        replyMessage.replyTo = sourceMessageId;
+        bus.publish(sourceMessageName, replyMessage, target, transfer);
     },
     hosted: function() {
         //TODO: this will potentially leak memory by keeping hostedCallbacks 
