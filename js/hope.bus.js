@@ -70,31 +70,18 @@ function init() {
      * to the host for this document. Once setup, trigger the hostedCallbacks
      * setup with bus.hosted() (which returns a Promise).
      */
-    bus.subscribe('/x/uae/bus/init/', event => {
+    bus.subscribe('/x/hope/bus/init/', event => {
         // the toplevel window has no name, so it should never set the host
         // reference, since a child iframe could then set the host to itself
         // and once set, don't change the host again
         if (window.name && !host && event.source) {
             host = event.source;
-            bus.publish('/x/uae/bus/init/ready/', {}, event.source);
+            bus.publish('/x/hope/bus/init/ready/', {}, event.source);
             hostedCallbacks.forEach(f => f());
             hostedCallbacks = [];
         }
     });
 
-    /*
-     * This listens for child frames reporting back, so you know
-     * they have a connection to the host.
-     */
-    bus.subscribe('/x/uae/bus/init/ready/', event => {
-        if (frames[event.data.source]) {
-            console.log('bus: connected '+event.data.source);
-            clearInterval(frames[event.data.source]);
-            delete frames[event.data.source];
-        } else {
-            console.error('bus: unknown frame responding: '+event.data.source);
-        }
-    });
 }
 
 export const bus = {
@@ -152,7 +139,7 @@ export const bus = {
         //@TODO: datastructure is now not optimized to handle call/reply-once 
         //but this will probably be the main use, so this is a candidate for
         //performance optimization.
-        message.id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+        message.id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER); //@TODO: maybe use UUID? or 0-pad the number, for ease of scanning in logs
         return new Promise(function(resolve, reject) {
             let resolved = false;
             let resolver = event => {
@@ -173,12 +160,12 @@ export const bus = {
     /**
      * Send a reply to an incoming message.
      */
-    reply: function(sourceMessageId, sourceMessageName, replyMessage, target=null, transfer=[]) {
+    reply: function(sourceMessageId, sourceMessageName, replyMessage, target, transfer=[]) {
         replyMessage.replyTo = sourceMessageId;
         bus.publish(sourceMessageName, replyMessage, target, transfer);
     },
     hosted: function() {
-        //TODO: this will potentially leak memory by keeping hostedCallbacks 
+        // @TODO: this will potentially leak memory by keeping hostedCallbacks 
         // in the root document (host) which never get resolved
         // after a certain timeout, assume this document is the root
         // and clean up the callbacks and don't accept new ones
@@ -195,32 +182,42 @@ export const bus = {
             });
         }
     },
-    connect: function(hopeDoc) {
-        /*
-         * Try to setup a connection with the child frames. They need a message
-         * to have a reference back to this host. The onload event doesn't guarantee
-         * that the iframe bus is already listening, it might be busy with other
-         * javascript code. So try again after an interval (0.5s) untill a response is
-         * received or the timeout is reached (10s).
-         */
-        let tryInit = hopeDoc => {
-            bus.publish('/x/uae/bus/init/', {}, hopeDoc);
-        };
+    /*
+     * Try to setup a connection with the child frames. They need a message
+     * to have a reference back to this host. The onload event doesn't guarantee
+     * that the iframe bus is already listening, it might be busy with other
+     * javascript code. So try again after an interval (0.5s) untill a response is
+     * received or the timeout is reached (10s).
+     */
+    connect: function(frame) {
+        return new Promise((resolve, reject) => {
 
-        let initRoutine = setInterval(() => { tryInit(hopeDoc) }, 500);
+            let tryInit = frame => {
+                bus.publish('/x/hope/bus/init/', {}, frame);
+            };
 
-        setTimeout(() => {
-            if (initRoutine) {
+            let initRoutine;
+
+            bus.subscribe('/x/hope/bus/init/ready/', event => {
                 clearInterval(initRoutine);
                 delete initRoutine;
-                console.error('bus error: frame '+hopeDoc.dataset.hopeName+' is not responding, giving up.');
-            }
-        }, 10000);
-        hopeDoc.addEventListener('onload', e => { 
-            bus.publish('/x/uae/bus/init/', {}, hopeDoc);
+                resolve(frame);
+            }, frame);
+
+            initRoutine = setInterval(() => { tryInit(frame) }, 500);
+            
+            setTimeout(() => {
+                if (initRoutine) {
+                    clearInterval(initRoutine);
+                    delete initRoutine;
+                    reject(new Error('Bus initialization error: could not connect to '+frame.name));
+                }
+            }, 10000);
+
+            frame.addEventListener('onload', e => tryInit(frame));
         });
     },
-    disconnect: function(hopeDoc) {
+    disconnect: function(frame) {
         //@TODO: implement this
     }
 };

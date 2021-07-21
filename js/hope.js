@@ -2,9 +2,13 @@ import { bus } from './hope.bus.js';
 import { seamless } from './hope.seamless.js';
 
 class HopeDoc {
+	static const LOADING = 1;
+	static const READY   = 10;
+
 	constructor(frame, name) {
-		this.frame = frame;
-		this.name  = name;
+		this.frame  = frame;
+		this.name   = name;
+		this.status = HopeDoc.LOADING;
 	}
 
 	api(api) {
@@ -62,10 +66,10 @@ document.hope = (function() {
     	}
    		let hopeDoc = new HopeDoc(frame, name);
 
-    	bus.connect(hopeDoc); // must notify listeners in this document that a new document has entered the dom
-    	seamless.connect(hopeDoc);
+    	bus.connect(hopeDoc.frame); // must notify listeners in this document that a new document has entered the dom
+    	seamless.connect(hopeDoc.frame);
     	if (typeof hopeDocuments[name] !== 'undefined') {
-    		name = name + '_' + Object.keys(hopeDocuments).length+1;
+    		name += '_' + Object.keys(hopeDocuments).length+1; //@TODO: prevent names like foo_1_1_1
     		frame.name = name;
     	}
    		hopeDocuments[name] = hopeDoc;
@@ -82,7 +86,7 @@ document.hope = (function() {
    	};
 
    	// add all existing hope documents
-   	[].forEach.call(document.querySelectorAll('iframe[data-hope-name]'), frame => {
+   	[].forEach.call(document.querySelectorAll('iframe'), frame => {
    		addDocument(frame);
    	});
 
@@ -96,7 +100,6 @@ document.hope = (function() {
 	});
 
 	return {
-		documentsByName: hopeDocuments,
 		documents: hopeDocuments,
 		bus: bus
 	}
