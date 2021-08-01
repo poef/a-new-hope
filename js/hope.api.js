@@ -9,6 +9,9 @@ let apiHandler = function(apiName) {
 		set: function(obj, prop, value) {
 			// setup listener for this message
 			hopeBus.subscribe(apiName+prop+'/', event => {
+				if (event.data.message.replyTo) {
+					return;
+				}
 				let result = obj[prop].callback(event.data.message)
 				if (!!result && typeof result.then === 'function') {
 					result.then(result => {
@@ -50,7 +53,7 @@ export const api = {
 		};
 
 		let getReflectionData = function(api) {
-			return Object.fromEntries(Object.entries(api).filter((key,val) => typeof api[key] !== 'function'));
+			return JSON.parse(JSON.stringify(api));
 		};
 
 		reflect.get = {

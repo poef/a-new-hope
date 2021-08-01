@@ -126,7 +126,7 @@ export const bus = {
         w.postMessage({
             name: messageName,
             origin: ''+window.location.href,
-            target: resolvedTarget.name,
+            target: targetName,
             source: window.name,
             message: message
         }, "*", transfer);
