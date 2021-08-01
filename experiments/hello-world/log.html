@@ -1,0 +1,20 @@
+<meta charset="utf-8"><script type="module">
+    import { hope } from "/a-new-hope/js/hope.js"   
+
+    let log = document.hope.api.register('/x/log/');
+    log.write = {
+        description: 'Implements a simple log writer',
+        params: {
+            message: {
+                type: 'string',
+                description: 'The message to write to the log'
+            }
+        },
+        callback: function(params) {
+            if (params.message) {
+                document.getElementById('log').innerHTML += "\n"+params.message+"\n";
+            }
+        }
+    }
+</script>
+<pre id="log"></pre>

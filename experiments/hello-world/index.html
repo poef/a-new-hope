@@ -1,0 +1,16 @@
+<meta charset="utf-8">
+<title>A hope document</title>
+<h1>A hope document</h1>
+<iframe name="log" src="log.html"></iframe>
+<script type="module">
+    import { hope } from "/a-new-hope/js/hope.js"   
+    hope.bus.debug = true;
+    let doclet = document.hope.doclets.log;
+    doclet.connect()
+    .then(() => {
+    	let log = doclet.api('/x/log/');
+    	log.write({message:'Hello world'}).catch(e => {
+	    	console.log('timeout');
+	    });
+    });
+</script>

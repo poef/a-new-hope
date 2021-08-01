@@ -85,7 +85,7 @@ function init() {
 }
 
 export const bus = {
-    debug: true,
+    debug: false,
     init: init,
     subscribe: function(messageName, callback, target='*') {
         if (!subscriptions[messageName]) {
@@ -99,7 +99,7 @@ export const bus = {
     },
     unsubscribe: function(messageName, callback, target='*') {
         if (!subscriptions[messageName]) { return }
-        subscriptions[messagename] = subscriptions[messageName].filter(data => data.callback==callback && data.target==target);
+        subscriptions[messageName] = subscriptions[messageName].filter(data => data.callback==callback && data.target==target);
     },
     publish: function(messageName, message, target=null, transfer=[]) {
         let targetName = 'host';
@@ -135,32 +135,34 @@ export const bus = {
      * Sends a message to the target and returns a Promise that is
      * triggered when a reply to this exact message is received.
      */
-    call: function(messageName, message, target=null, transfer=[]) {
+    call: function(messageName, message={}, target=null, transfer=[]) {
         //@TODO: datastructure is now not optimized to handle call/reply-once 
         //but this will probably be the main use, so this is a candidate for
         //performance optimization.
         message.id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER); //@TODO: maybe use UUID? or 0-pad the number, for ease of scanning in logs
         return new Promise(function(resolve, reject) {
-            let resolved = false;
+            let timeoutHandler = window.setTimeout(() => {
+                bus.unsubscribe(messageName, resolver, target);
+                reject(new Error('message reply timeout '+messageName));
+            }, 10000); // timeout is 10 seconds. @TODO: turn into an option/parameter?
             let resolver = event => {
-                if (event.data.replyTo==message.id) {
-                    resolved = true;
-                    resolve(event.data);
+                if (event.data.message.replyTo==message.id) {
+                    bus.unsubscribe(messageName, resolver, target);
+                    window.clearTimeout(timeoutHandler);
+                    resolve(event.data.message);
                 }
             };
-            window.setTimeout(() => {
-                if (!resolved) {
-                    bus.unsubscribe(messaName, resolver, target);
-                    reject(new Error('message reply timeout'));
-                }
-            }, 10000); // timeout is 10 seconds. @TODO: turn into an option/parameter?
             bus.subscribe(messageName, resolver, target);
+            bus.publish(messageName, message, target, transfer);
         });
     },
     /**
      * Send a reply to an incoming message.
      */
     reply: function(sourceMessageId, sourceMessageName, replyMessage, target, transfer=[]) {
+        if (!replyMessage) {
+            replyMessage = {};
+        }
         replyMessage.replyTo = sourceMessageId;
         bus.publish(sourceMessageName, replyMessage, target, transfer);
     },
@@ -200,7 +202,7 @@ export const bus = {
 
             bus.subscribe('/x/hope/bus/init/ready/', event => {
                 clearInterval(initRoutine);
-                delete initRoutine;
+                initRoutine = null;
                 resolve(frame);
             }, frame);
 
@@ -209,7 +211,7 @@ export const bus = {
             setTimeout(() => {
                 if (initRoutine) {
                     clearInterval(initRoutine);
-                    delete initRoutine;
+                    initRoutine = null;
                     reject(new Error('Bus initialization error: could not connect to '+frame.name));
                 }
             }, 10000);

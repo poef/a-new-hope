@@ -27,6 +27,9 @@ export const seamless = {
     init: function(bus) {
         init(bus);
     },
+    connect: function(frame) {
+        //@TODO: check if we need this and implement if so
+    },
     report: function(frame) {
         return bus.hosted().then(() => {
             size = getSize();
@@ -52,9 +55,9 @@ export const seamless = {
                 }
             })
         */
-        Object.values(document.hope.documents)
+        Object.values(document.hope.doclets)
         .flat()
-        .forEach(frame => {
+        .forEach(doclet => {
             bus.publish(
                 '/x/uae/seamless/request-size',
                 {
@@ -62,9 +65,9 @@ export const seamless = {
                         width: size.width-buffer
                     }
                 }, 
-                frame
+                doclet.frame
             );
-            frame.addEventListener(
+            doclet.frame.addEventListener(
                 'load',
                 e => bus.publish(
                     '/x/uae/seamless/request-size',
@@ -73,7 +76,7 @@ export const seamless = {
                             width: size.width-buffer
                         }
                     }, 
-                    frame
+                    doclet.frame
                 )
             )
         });
