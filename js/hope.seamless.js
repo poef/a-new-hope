@@ -31,28 +31,32 @@ export const seamless = {
 
 function init(hopeBus) {
     bus = hopeBus;
+    bus.hosted().then(() => {
+        addStyle(`
+        html {
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            width: max-content;
+            height: max-content;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        `);       
+    });
     addStyle(`
-    iframe[data-uae-seamless] {
-        background-color: transparent;
-        border: none;
-        overflow: hidden;
-        padding: 0;
-        margin: 0;
-        max-width: 100%;
-    }
-    html {
-        margin: 0;
-    }
-    body {
-        margin: 0;
-        width: max-content;
-        height: max-content;
-        max-width: 100vw;
-        max-height: 100vh;
-    }
+        iframe[name] {
+            background-color: transparent;
+            border: none;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+            max-width: 100%;
+        }
     `);
 
-    let seamlessApi = document.hope.api.register('/x/hope/seamless');
+    let seamlessApi = document.hope.api.register('/x/hope/seamless/');
     seamlessApi.requestSize = {
         description: 'Returns a size object with the preferred height and optionally width of this doclet',
         params: {
@@ -85,7 +89,7 @@ function init(hopeBus) {
             let size = getSize();
             Object.values(document.hope.doclets)
             .forEach(doclet => {
-                doclet.api('/x/hope/seamless').requestSize({
+                doclet.api('/x/hope/seamless/').requestSize({
                     maxWidth: size.width,
                     maxHeight: size.height
                 })
@@ -142,10 +146,42 @@ function init(hopeBus) {
         }
     }
 
+    // if this document is hosted inside another document
+    // then let the host know our size as soon as possible
+    // and update the size if for any reason the window is resized
     document.hope.bus.hosted()
     .then(() => {
         let seamlessHostApi = document.hope.host.api('/x/hope/seamless/');
-        seamlessHostApi.reportSize();
-        window.addEventListener('resize', debounce(seamlessHostApi.reportSize, 250));
+        window.requestAnimationFrame(function() {
+            seamlessHostApi.reportSize(getSize());
+        });
+        window.addEventListener('resize', debounce(function() {
+            let size = getSize();
+            seamlessHostApi.reportSize(size);
+        }, 250));
     });
+
+    // Whenever our window size changes, request a new size for
+    // all child doclets
+    window.addEventListener('resize', debounce(function() {
+        Object.values(document.hope.doclets)
+        .forEach(doclet => {
+            doclet.api('/x/hope/seamless/').requestSize({
+                maxWidth: size.width,
+                maxHeight: size.height
+            })
+            .then(message => {
+                if (message.width) {
+                    doclet.frame.style.width = Math.ceil(message.width+buffer)+'px';
+                }
+                if (message.height) {
+                    doclet.frame.style.height = Math.ceil(message.height+buffer)+'px';
+                }
+            });
+        });
+    }, 250));
+
+    // FIXME: whenever a new doclet is inserted, call requestSize on it
+    // This should probably be an event of hope.js e.g. hopeDocletsChanged
+
 }
