@@ -1,5 +1,5 @@
 import { bus } from './hope.bus.js';
-//import { seamless } from './hope.seamless.js';
+import { seamless } from './hope.seamless.js';
 import { api } from './hope.api.js';
 
 const LOADING    = 1;
@@ -37,6 +37,7 @@ class HopeDoclet {
 
 
 export let hope = document.hope = {
+	host: null,
 	doclets: {},
 	bus: bus,
 	api: api
@@ -76,7 +77,6 @@ var addDoclet = function(frame) {
 	let hopeDoclet = new HopeDoclet(frame, name);
 
 	bus.connect(hopeDoclet.frame); // must notify listeners in this document that a new document has entered the dom
-//	seamless.connect(hopeDoclet.frame);
 	if (typeof hope.doclets[name] !== 'undefined') {
 		name += '_' + Object.keys(hope.doclets).length+1; //@TODO: prevent names like foo_1_1_1
 		frame.name = name;
@@ -89,7 +89,6 @@ var removeDoclet = function(frame) {
 	if (!hopeDoclet) {
 		//@TODO: throw error? or ignore silently?
 	}
-//	seamless.disconnect(hopeDoclet);
 	bus.disconnect(hopeDoclet); // @TODO: must trigger errors for listeners that are waiting for a response from this document
 	delete hope.doclets[name];
 };
@@ -100,8 +99,14 @@ var removeDoclet = function(frame) {
 });
 
 bus.init();
-//seamless.init(bus);
+bus.hosted().then(() => {
+	document.hope.host = new HopeDoclet(null, 'host');
+	document.hope.host.status = READY;
+});
+
 api.init(bus);
+seamless.init(bus);
+
 
 var observer = new MutationObserver(handleChanges);
 observer.observe(document, {

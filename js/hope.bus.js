@@ -134,6 +134,8 @@ export const bus = {
     /**
      * Sends a message to the target and returns a Promise that is
      * triggered when a reply to this exact message is received.
+     * @FIXME: adding the message id and replyTo in the message itself is a problem
+     * - it is too easy to mess up, just add a message header/envelope with meta information like this
      */
     call: function(messageName, message={}, target=null, transfer=[]) {
         //@TODO: datastructure is now not optimized to handle call/reply-once 

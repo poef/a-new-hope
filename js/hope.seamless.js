@@ -26,64 +26,8 @@ const debounce = (func, delay) => {
 export const seamless = {
     init: function(bus) {
         init(bus);
-    },
-    connect: function(frame) {
-        //@TODO: check if we need this and implement if so
-    },
-    report: function(frame) {
-        return bus.hosted().then(() => {
-            size = getSize();
-            bus.publish('/x/uae/seamless/report-size', {
-                size: size,
-                frame: frame ? frame : window.name
-            });
-        });
-    },
-    resize: function() {
-        size = getSize();
-        //@TODO: this should use a higher level api
-        // e.g.
-        /*
-            document.hope
-            .sendAll('/x/hope/seamless/request-size', { maxSize: (size.with-buffer)})
-            .then((frame,message) => {
-                if (message.size.width) {
-                    frame.style.width  = Math.ceil(message.size.width+buffer)+'px';
-                }
-                if (message.size.height) {
-                    frame.style.height = Math.ceil(message.size.height+buffer)+'px';
-                }
-            })
-        */
-        Object.values(document.hope.doclets)
-        .flat()
-        .forEach(doclet => {
-            bus.publish(
-                '/x/uae/seamless/request-size',
-                {
-                    'max-size': {
-                        width: size.width-buffer
-                    }
-                }, 
-                doclet.frame
-            );
-            doclet.frame.addEventListener(
-                'load',
-                e => bus.publish(
-                    '/x/uae/seamless/request-size',
-                    {
-                        'max-size': {
-                            width: size.width-buffer
-                        }
-                    }, 
-                    doclet.frame
-                )
-            )
-        });
     }
 }
-
-
 
 function init(hopeBus) {
     bus = hopeBus;
@@ -108,35 +52,100 @@ function init(hopeBus) {
     }
     `);
 
-    bus.subscribe('/x/uae/seamless/request-size', function(event) {
-        // a parent document asks for our size
-        let maxSize = event.data.message['max-size'];
-        let maxWidth = maxSize.width ? maxSize.width+'px' : 'unset';
-        let maxHeight = maxSize.height ? maxSize.height+'px' : 'unset';
-        addStyle(`
-    body {
-        max-width: ${maxWidth};
-        max-height: ${maxHeight};
-    }
-    `);
-        seamless.report(event.data.target);
-    });
-
-    bus.subscribe('/x/uae/seamless/report-size', function(event) {
-        // a child document is returning its size
-        let message = event.data.message;
-        let frame = document.querySelector('iframe[name="'+message.frame+'"]');
-        if (frame) {
-            if (message.size.width) {
-                frame.style.width  = Math.ceil(message.size.width+buffer)+'px';
+    let seamlessApi = document.hope.api.register('/x/hope/seamless');
+    seamlessApi.requestSize = {
+        description: 'Returns a size object with the preferred height and optionally width of this doclet',
+        params: {
+            'maxWidth': {
+                type: 'int'
+            },
+            'maxHeight': {
+                type: 'int'
             }
-            if (message.size.height) {
-                frame.style.height = Math.ceil(message.size.height+buffer)+'px';
+        },
+        return: {
+            description: 'An object with the preferred width and height',
+            type: 'object'
+        },
+        callback: function(params) {
+            let maxWidth = 'unset';
+            let maxHeight = 'unset';
+            if (typeof params.maxWidth != 'undefined') {
+                maxWidth = params.maxWidth;
+            }
+            if (typeof params.maxHeight != 'undefined') {
+                maxHeight = params.maxHeight;
+            }
+            addStyle(`
+            body {
+                max-width: ${maxWidth};
+                max-height: ${maxHeight};
+            }
+            `);
+            let size = getSize();
+            Object.values(document.hope.doclets)
+            .forEach(doclet => {
+                doclet.api('/x/hope/seamless').requestSize({
+                    maxWidth: size.width,
+                    maxHeight: size.height
+                })
+                .then(message => {
+                    if (message.width) {
+                        doclet.frame.style.width = Math.ceil(message.width+buffer)+'px';
+                    }
+                    if (message.height) {
+                        doclet.frame.style.height = Math.ceil(message.height+buffer)+'px';
+                    }
+                });
+            });
+            return size; //FIXME: wiat for all child doclets to respond to requestSize, then getSize() again.
+        }
+    }
+
+    seamlessApi.reportSize = {
+        description: 'Pushes a new height and optionally width to the host doclet',
+        params: {
+            'width': {
+                type: 'int'
+            },
+            'height': {
+                type: 'int'
+            }
+        },
+        callback: function(params, source) {
+            if (!source) {
+                return;
+            }
+            source = document.hope.doclets[source];
+            let maxSize = getSize();
+            if (params.width) {
+                source.frame.style.width = params.width+buffer+'px';
+            }
+            if (params.height) {
+                source.frame.style.height = params.height+buffer+'px';
             }
         }
-        seamless.report();
-    });
+    }
 
-    seamless.resize();
-    window.addEventListener('resize', debounce(seamless.resize, 250));
+    seamlessApi.addStyle = {
+        description: 'Update CSS to add the style string given',
+        params: {
+            style: {
+                type: 'string',
+                description: 'The CSS to add to the child doclet'
+            }
+        },
+        callback: function(params) {
+            if (params.style) {
+                addStyle(params.style);
+            }
+        }
+    }
+
+    document.hope.bus.hosted()
+    .then(() => {
+        let seamlessHostApi = document.hope.host.api('/x/hope/seamless/');
+        seamlessHostApi.reportSize();
+        window.addEventListener('resize', debounce(seamlessHostApi.reportSize, 250));
+    });
 }

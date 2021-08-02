@@ -12,7 +12,7 @@ let apiHandler = function(apiName) {
 				if (event.data.message.replyTo) {
 					return;
 				}
-				let result = obj[prop].callback(event.data.message)
+				let result = obj[prop].callback(event.data.message, event.data.source)
 				if (!!result && typeof result.then === 'function') {
 					result.then(result => {
 						if (event.data.message.id) {
