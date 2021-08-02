@@ -153,17 +153,15 @@ function init(hopeBus) {
     .then(() => {
         let seamlessHostApi = document.hope.host.api('/x/hope/seamless/');
         let size = getSize();
-        window.setInterval(function() {
+        let reportSize = function() {
             let newSize = getSize();
             if (size.width!=newSize.width || size.height!=newSize.height) {
                 seamlessHostApi.reportSize(newSize);
                 size = newSize;
             }
-        }, 100);
-        window.addEventListener('resize', debounce(function() {
-            let size = getSize();
-            seamlessHostApi.reportSize(size);
-        }, 250));
+        };
+        window.setInterval(reportSize, 100);
+        window.addEventListener('resize', debounce(reportSize, 250));
     });
 
     // Whenever our window size changes, request a new size for
