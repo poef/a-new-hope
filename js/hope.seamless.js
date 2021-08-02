@@ -152,9 +152,14 @@ function init(hopeBus) {
     document.hope.bus.hosted()
     .then(() => {
         let seamlessHostApi = document.hope.host.api('/x/hope/seamless/');
-        window.requestAnimationFrame(function() {
-            seamlessHostApi.reportSize(getSize());
-        });
+        let size = getSize();
+        window.setInterval(function() {
+            let newSize = getSize();
+            if (size.width!=newSize.width || size.height!=newSize.height) {
+                seamlessHostApi.reportSize(newSize);
+                size = newSize;
+            }
+        }, 100);
         window.addEventListener('resize', debounce(function() {
             let size = getSize();
             seamlessHostApi.reportSize(size);
