@@ -167,6 +167,7 @@ function init(hopeBus) {
     // Whenever our window size changes, request a new size for
     // all child doclets
     window.addEventListener('resize', debounce(function() {
+        let size = getSize();
         Object.values(document.hope.doclets)
         .forEach(doclet => {
             doclet.api('/x/hope/seamless/').requestSize({
