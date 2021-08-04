@@ -128,7 +128,7 @@ export const bus = {
             origin: ''+window.location.href,
             target: targetName,
             source: window.name,
-            message: message
+            message: message //FIXME: make sure message is clonable, e.g. using JSON
         }, "*", transfer);
     },
     /**

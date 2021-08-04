@@ -1,6 +1,7 @@
 import { bus } from './hope.bus.js';
 import { seamless } from './hope.seamless.js';
 import { api } from './hope.api.js';
+import './hope.inspector.js';
 
 const LOADING    = 1;
 const CONNECTING = 2
@@ -16,18 +17,18 @@ class HopeDoclet {
 
 	api(api) {
 		let self = this;
-		let cache = () => {}; // need a function to trap method calls with Proxy.apply()
+		let f = () => {}; // need a function to trap method calls with Proxy.apply()
 		let apiHandler = function(api) {
 			return {
 				get: function(obj, prop) {
-					return new Proxy(cache, apiHandler(api+prop+'/')); //@FIXME: handle missing end '/' in api
+					return new Proxy(f, apiHandler(api+prop+'/')); //@FIXME: handle missing end '/' in api
 				},
 				apply: function(obj, thisArg, params) {
 					return bus.call(api, params[0], self.frame);
 				}
 			};
 		};
-		return new Proxy(cache, apiHandler(api));
+		return new Proxy(f, apiHandler(api));
 	}
 
 	connect() {
@@ -66,6 +67,7 @@ var handleChanges = function(changes) {
             });
         }
     }
+    //TODO: fire event with the add/removed doclets
 };
 
 var addDoclet = function(frame) {

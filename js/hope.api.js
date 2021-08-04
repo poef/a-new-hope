@@ -7,6 +7,9 @@ let apiHandler = function(apiName) {
 			return obj[prop];
 		},
 		set: function(obj, prop, value) {
+			// FIXME: add error handling
+			// - should exceptions be caught and sent as a result?
+			// - or should only returned errors be sent?
 			// setup listener for this message
 			hopeBus.subscribe(apiName+prop+'/', event => {
 				if (event.data.message.replyTo) {
@@ -18,7 +21,7 @@ let apiHandler = function(apiName) {
 						if (event.data.message.id) {
 							hopeBus.reply(event.data.message.id, event.data.name, result, event.data.source);
 						}
-					});
+					}); //FIXME: add a catch here
 				} else {
 					if (event.data.message.id) {
 						hopeBus.reply(event.data.message.id, event.data.name, result, event.data.source);
