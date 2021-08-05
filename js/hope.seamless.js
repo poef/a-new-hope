@@ -9,8 +9,68 @@ const addStyle = function(s) {
 }
 
 const getSize = function() {
+    var body = getComputedStyle(document.body);
+    var height = Math.max(parseInt(body.height), document.body.clientHeight);
+
     let rect = document.body.getBoundingClientRect();
-    return {width:Math.ceil(rect.width),height:Math.ceil(rect.height)};
+    return {width:Math.ceil(rect.width),height:height};
+}
+
+const setSize = function(frame, size) {
+    let buffer  = 0;
+    let maxSize = getMaxSize(frame.parentElement);
+    if (size.width) {
+        var width = Math.min(maxSize.width, size.width+buffer);
+        frame.style.width = width+'px';
+    }
+    if (size.height) {
+        if (maxSize.height) {
+            var height = Math.min(maxSize.height, size.height+buffer);
+        } else {
+            var height = size.height+buffer;
+        }
+        frame.style.height = height+buffer+'px';
+    }
+}
+
+/**
+ * Calculate the maximum width and height an element may occupy
+ * before hitting a fixed width/height or max-width/max-height
+ */
+const getMaxSize = function(frame) {
+    let s = getComputedStyle(frame.parentElement);
+    let maxWidth = parseInt(s.inlineSize);
+    let maxHeight = null;
+    if ((s.maxBlockSize && s.maxBlockSize!='none') || s.overflow=='hidden' || s.overflowBlock == 'hidden') {
+        maxHeight = s.blockSize;
+    }
+    // check box-sizing and border/padding of parent
+    if (s.boxSizing=='content-box') {
+        // subtract border and padding of parent
+        maxWidth -= ( parseInt(s.borderInlineStartWidth) + parseInt(s.borderInlineEndWidth) 
+            + parseInt(s.paddingInlineStart) + parseInt(s.paddingInlineEnd) 
+        );
+        if (maxHeight) {
+            maxHeight -= ( parseInt(s.borderBlockStartWidth) + parseInt(s.borderBlockEndWidth) 
+                + parseInt(s.paddingBlockStart) + parseInt(s.paddingBlockEnd)
+            );
+        }
+    }
+    // check margin and border of iframe
+    let fs = getComputedStyle(frame);
+    if (fs.boxSizing=='content-box') {
+        maxWidth -= ( parseInt(fs.borderInlineStartWidth) + parseInt(fs.borderInlineEndWidth) );
+        if (maxHeight) {
+            maxHeight -= ( parseInt(fs.borderBlockStartWidth) + parseInt(fs.borderBlockEndWidth) );
+        }
+    }
+    let size = {
+        width: maxWidth
+    };
+    if (maxHeight) {
+        size.height = maxHeight;
+    }
+    return size;
 }
 
 const debounce = (func, delay) => {
@@ -53,6 +113,7 @@ function init(hopeBus) {
             padding: 0;
             margin: 0;
             max-width: 100%;
+            width: 100%;
         }
     `);
 
@@ -86,20 +147,18 @@ function init(hopeBus) {
                 max-height: ${maxHeight};
             }
             `);
-            let size = getSize();
             Object.values(document.hope.doclets)
             .forEach(doclet => {
-                doclet.api('/x/hope/seamless/').requestSize({
-                    maxWidth: size.width,
-                    maxHeight: size.height
-                })
+                let size = getMaxSize(doclet.frame);
+                let params = {
+                    maxWidth: size.width
+                }
+                if (size.height) {
+                    params.maxheight = size.height;
+                }                
+                doclet.api('/x/hope/seamless/').requestSize(params)
                 .then(message => {
-                    if (message.width) {
-                        doclet.frame.style.width = Math.ceil(message.width+buffer)+'px';
-                    }
-                    if (message.height) {
-                        doclet.frame.style.height = Math.ceil(message.height+buffer)+'px';
-                    }
+                    setSize(doclet.frame, message);
                 });
             });
             return size; //FIXME: wiat for all child doclets to respond to requestSize, then getSize() again.
@@ -121,13 +180,7 @@ function init(hopeBus) {
                 return;
             }
             source = document.hope.doclets[source];
-            let maxSize = getSize();
-            if (params.width) {
-                source.frame.style.width = params.width+buffer+'px';
-            }
-            if (params.height) {
-                source.frame.style.height = params.height+buffer+'px';
-            }
+            setSize(source.frame, params)
         }
     }
 
@@ -167,25 +220,22 @@ function init(hopeBus) {
     // Whenever our window size changes, request a new size for
     // all child doclets
     window.addEventListener('resize', debounce(function() {
-        let size = getSize();
         Object.values(document.hope.doclets)
         .forEach(doclet => {
-            doclet.api('/x/hope/seamless/').requestSize({
-                maxWidth: size.width,
-                maxHeight: size.height
-            })
+            let size = getMaxSize(doclet.frame);
+            let params = {
+                maxWidth: size.width
+            }
+            if (size.height) {
+                params.maxheight = size.height;
+            }
+            doclet.api('/x/hope/seamless/').requestSize(params)
             .then(message => {
-                if (message.width) {
-                    doclet.frame.style.width = Math.ceil(message.width+buffer)+'px';
-                }
-                if (message.height) {
-                    doclet.frame.style.height = Math.ceil(message.height+buffer)+'px';
-                }
+                setSize(doclet.frame, message)
             });
         });
     }, 250));
 
     // FIXME: whenever a new doclet is inserted, call requestSize on it
     // This should probably be an event of hope.js e.g. hopeDocletsChanged
-
 }
