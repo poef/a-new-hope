@@ -1,16 +1,50 @@
 <meta charset="utf-8">
 <title>A hope document</title>
 <h1>A hope document</h1>
+<p>This is a demo to show and test the experimental Hope API</p>
+<p>Hope is a web based platform for interoperable documents that render themselves and can communicate among themselves</p>
+<p>Because each document is also a running (javascript) application, I've called them 'doclets'.</p>
+<p>The major innovation is that doclets can be hosted anywhere. Because they use the postMessage API, they can communicate cross domain. You can embed 'untrusted' doclets, since they can <em>only</em> interact using the postMessage API.</p>
+<p>Below is a basic log doclet</p>
+
 <iframe name="log" src="log.html"></iframe>
 <script type="module">
     import { hope } from "/a-new-hope/js/hope.js"   
+
     hope.bus.debug = true;
+
     let doclet = document.hope.doclets.log;
+
     doclet.connect()
     .then(() => {
     	let log = doclet.api('/x/log/');
-    	log.write({message:'Hello world'}).catch(e => {
+    	log.write({message:'Hello world'})
+    	.catch(e => {
 	    	console.log('timeout');
 	    });
     });
 </script>
+
+<p>Open the console (ctrl-shift-i) to see a log of messages from the host
+bus</p>
+<p>Some calls to try:</p>
+<pre>
+  let api = document.hope.doclets.log.api('/x/log/');
+  api.write({message:'Another line'});
+</pre>
+<p>This writes a new log line and should grow the log doclet.</p>
+<pre>  
+  let reflect = document.hope.doclets.log.api('/x/hope/reflect/');
+  reflect.list().then(m => { console.log(m) });
+  reflect.get({ api: '/x/log/'}).then(m => { console.log(m) });
+</pre>
+<p>This first lists a number of supported API's in a doclet. Then it shows details about the '/x/log/' API.</p>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Seamless iframes probably should default to use the full width, even if not
+needed by the doclet. This prevents weird resizing.</li>
+<li>It would be even better to make a shadow version with no size boundaries
+and test the size there... however this is not trivial</li>
+<li>Bug: the reply from a call from a doclet to the host is sent to the
+host... instead of the doclet.</li>
+</ul>
