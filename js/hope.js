@@ -51,23 +51,36 @@ export let hope = document.hope = {
  * exposed as document.hope.doclets.
  */
 var handleChanges = function(changes) {
+	let added = [];
+	let removed = [];
     for (const change of changes) {
         if (change.type=='childList') {
-            [].forEach.call(change.addedNodes, node => {
+            Array.from(change.addedNodes).forEach(node => {
                 if (node.querySelectorAll) {
-                    [].slice.call(node.querySelectorAll('iframe'))
-                    	.forEach(frame => addDoclet(frame));
+                    Array.from(node.querySelectorAll('iframe'))
+                    .forEach(frame => {
+                    	added.push(addDoclet(frame));
+                    });
                 }
             });
-            [].forEach.call(change.removedNodes, node => {
+            Array.from(change.removedNodes).forEach(node => {
             	if (node.querySelectorAll) {
-            		[].slice.call(node.querySelectorAll('iframe'))
-            			.forEach(frame => removeDoclet(frame));
+            		Array.from(node.querySelectorAll('iframe'))
+            		.forEach(frame => {
+            			removed.push(removeDoclet(frame));
+            		});
             	}
             });
         }
     }
-    //TODO: fire event with the add/removed doclets
+    // fire event with the add/removed doclets
+    if (added.length || removed.length) {
+    	const event = new CustomEvent('hopeDocletsChanged', {
+    		added: added,
+    		removed: removed
+    	});
+    	document.body.dispatchEvent(event);
+    }
 };
 
 var addDoclet = function(frame) {
