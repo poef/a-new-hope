@@ -8,21 +8,16 @@ const addStyle = function(s) {
     document.head.appendChild(style);
 }
 
-const getSize = function() {
-    var body = getComputedStyle(document.body);
-    var height = Math.max(parseInt(body.height), document.body.clientHeight);
-
-    let rect = document.body.getBoundingClientRect();
-    return {width:Math.ceil(rect.width),height:height};
+const getSize = function(params) {
+    return {
+        width: document.body.offsetWidth,
+        height: document.body.offsetHeight
+    };
 }
 
 const setSize = function(frame, size) {
     let buffer  = 0;
     let maxSize = getMaxSize(frame.parentElement);
-    if (size.width) {
-        var width = Math.min(maxSize.width, size.width+buffer);
-        frame.style.width = width+'px';
-    }
     if (size.height) {
         if (maxSize.height) {
             var height = Math.min(maxSize.height, size.height+buffer);
@@ -31,6 +26,19 @@ const setSize = function(frame, size) {
         }
         frame.style.height = height+buffer+'px';
     }
+}
+
+const updateDocletSize = function(doclet) {
+    let size = getMaxSize(doclet.frame);
+    let params = {};
+    if (size.height) {
+        params.maxheight = size.height;
+    }
+    return doclet.api('/x/hope/seamless/')
+    .requestSize(params)
+    .then(message => {
+        setSize(doclet.frame, message)
+    });
 }
 
 /**
@@ -101,7 +109,7 @@ function init(hopeBus) {
             width: max-content;
             height: max-content;
             max-width: 100vw;
-            max-height: 100vh;
+            overflow: hidden;
         }
         `);       
     });
@@ -133,35 +141,18 @@ function init(hopeBus) {
             type: 'object'
         },
         callback: function(params) {
-            let maxWidth = 'unset';
             let maxHeight = 'unset';
-            if (typeof params.maxWidth != 'undefined') {
-                maxWidth = params.maxWidth;
-            }
             if (typeof params.maxHeight != 'undefined') {
                 maxHeight = params.maxHeight;
             }
-            addStyle(`
-            body {
-                max-width: ${maxWidth};
-                max-height: ${maxHeight};
-            }
-            `);
+            promises = [];
             Object.values(document.hope.doclets)
             .forEach(doclet => {
-                let size = getMaxSize(doclet.frame);
-                let params = {
-                    maxWidth: size.width
-                }
-                if (size.height) {
-                    params.maxheight = size.height;
-                }                
-                doclet.api('/x/hope/seamless/').requestSize(params)
-                .then(message => {
-                    setSize(doclet.frame, message);
-                });
+                promises.push(updateDocletSize(doclet));
             });
-            return size; //FIXME: wiat for all child doclets to respond to requestSize, then getSize() again.
+            return Promise.all(promises).then(() => {
+                return getSize();
+            });
         }
     }
 
@@ -222,20 +213,16 @@ function init(hopeBus) {
     window.addEventListener('resize', debounce(function() {
         Object.values(document.hope.doclets)
         .forEach(doclet => {
-            let size = getMaxSize(doclet.frame);
-            let params = {
-                maxWidth: size.width
-            }
-            if (size.height) {
-                params.maxheight = size.height;
-            }
-            doclet.api('/x/hope/seamless/').requestSize(params)
-            .then(message => {
-                setSize(doclet.frame, message)
-            });
+            updateDocletSize(doclet);
         });
     }, 250));
 
-    // FIXME: whenever a new doclet is inserted, call requestSize on it
-    // This should probably be an event of hope.js e.g. hopeDocletsChanged
+    // whenever a new doclet is inserted, call requestSize on it
+    document.body.addEventListener('hopeDocletsChanged', e => {
+        if (e.added.length) {
+            e.added.forEach(d => {
+                updateDocletSize(d);
+            });
+        }
+    });
 }
