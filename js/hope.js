@@ -4,7 +4,7 @@ import { api } from './hope.api.js';
 import './hope.inspector.js';
 
 const LOADING    = 1;
-const CONNECTING = 2
+const FAILED     = 2;
 const READY      = 4;
 
 class HopeDoclet {
@@ -90,8 +90,12 @@ var addDoclet = function(frame) {
 		frame.name = name;
 	}
 	let hopeDoclet = new HopeDoclet(frame, name);
-
-	bus.connect(hopeDoclet.frame); // must notify listeners in this document that a new document has entered the dom
+	bus.connect(hopeDoclet.frame).then(() => {
+		hopeDoclet.status = READY;
+	})
+	.catch(e => {
+		hopeDoclet.status = FAILED;
+	});
 	if (typeof hope.doclets[name] !== 'undefined') {
 		name += '_' + Object.keys(hope.doclets).length+1; //@TODO: prevent names like foo_1_1_1
 		frame.name = name;
@@ -121,7 +125,6 @@ bus.hosted().then(() => {
 
 api.init(bus);
 seamless.init(bus);
-
 
 var observer = new MutationObserver(handleChanges);
 observer.observe(document, {
