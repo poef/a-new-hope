@@ -145,7 +145,7 @@ function init(hopeBus) {
             if (typeof params.maxHeight != 'undefined') {
                 maxHeight = params.maxHeight;
             }
-            promises = [];
+            let promises = [];
             Object.values(document.hope.doclets)
             .forEach(doclet => {
                 promises.push(updateDocletSize(doclet));
