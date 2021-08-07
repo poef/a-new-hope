@@ -1,4 +1,6 @@
-// inspector prototype
+/**
+ * Hope Inspector prototype
+ */
 let hope = {
 	help: 'Available methods: doclets(name|optional), debugger(), script("id|optional","value|optional"), tree()',
 	doclets: function(name=null) {
@@ -49,9 +51,6 @@ let hope = {
 		return {};
 	},
 	tree: function() {
-		//TODO: this call is now automatically forwarded to child doclets
-		//but to support reflection and other stuff we should be able
-		//to forward any call to a sub sub doclet and get the result back
 		let tree = {};
 		let promises = [];
 		hope.doclets().forEach(doclet => {
@@ -136,9 +135,12 @@ With the params.value set, it will update the script to the given value and relo
 	inspectorApi.updateTree = {
 		callback: function(params, sourceFrame) {
 			hope[sourceFrame.name] = params.tree;
+			// if this document is a doclet hosted in another document, update the host tree as well
+			hope.updateTree(hope);
 		}
 	}
 
+	// update the local hope tree and the host hope tree when subdoclets connect
 	document.hope.bus.subscribe('/x/hope/bus/init/ready/', event => {
 		let source = event.data.source;
 		if (source) {
