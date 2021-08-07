@@ -59,7 +59,7 @@ let hope = {
 				doclet.api('/x/hope/inspector/')
 				.tree()
 				.then(subtree => { 
-					tree[doclet.name] = Object.assign(doclet, subtree, {
+					tree[doclet.name] = Object.assign({}, doclet, subtree, {
 						debugger: () => doclet.api('/x/hope/inspector/').debugger(),
 						script: (...params) => doclet.api('/x/hope/inspector/').script.apply(null, params)
 					});
@@ -147,7 +147,7 @@ With the params.value set, it will update the script to the given value and relo
 				doclet.api('/x/hope/inspector/').tree()
 				.then(subtree => {
 					delete subtree.replyTo; //@FIXME: add header/envelope to messages so we don't have to do this
-					hope[doclet.name] = Object.assign(doclet, subtree, {
+					hope[doclet.name] = Object.assign({}, doclet, subtree, {
 						debugger: () => doclet.api('/x/hope/inspector/').debugger(),
 						script: (id=null, value=null) => doclet.api('/x/hope/inspector/').script({ name: id, value: value})
 					});
