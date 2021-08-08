@@ -33,21 +33,55 @@ let hope = {
 		// onsave update the script tag with the contents of the editor
 		let script = document.querySelector('script[id='+id+']');
 		if (!script) {
-			let script = document.createElement('script');
+			script = document.createElement('script');
 			script.id = id;
 			document.body.appendChild(script);
 		}
-		let editor = `
-<strong>editor ${id}</strong><br><textarea id="script_${id}"></textarea><button onClick="save()">Save</button>`;
-		let save = `function save() {
-	window.opener.hope.script('${id}', document.getElementById('script_${id}').value);
-}`;
 		let editorWindow = window.open('',id);
-		editorWindow.document.body.innerHTML = editor;
-		let saveScript = editorWindow.document.createElement('script');
-		saveScript.innerHTML = save;
-		editorWindow.document.body.appendChild(saveScript);
-		editorWindow.focus();
+		if (editorWindow.editor) { // if this window is already open, don't reload it, re-use it.
+			editorWindow.editor.setValue(script.innerHTML);
+			editorWindow.focus();
+		} else {
+			let scriptSource = script.innerHTML.replace(/"/g,'\\"');
+			let editor = `
+<head>
+<title>${id}</title>
+<style>
+	html, body {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		height: 100%;
+	}
+	.CodeMirror {
+		height: 100vh !important;
+	}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.min.js" integrity="sha512-6Q5cHfb86ZJ3qWx47Pw7P5CN1/pXcBMmz3G0bXLIQ67wOtRF7brCaK5QQLPz2CWLBqjWRNH+/bV5MwwWxFGxww==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.min.css" integrity="sha512-xIf9AdJauwKIVtrVRZ0i4nHP61Ogx9fSRAkCLecmE2dL/U8ioWpDvFCAy4dcfecN72HHB9+7FfQj3aiO68aaaw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/theme/night.min.css" integrity="sha512-pacIk0A3c7l/KD0Belz3UTv/3cE2R57Se/sxKFG/4aJklknJisL7uY5rgMs/ReMOGUjVC8EnSLgjlPxtXN2atA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/addon/hint/javascript-hint.min.js" integrity="sha512-HB0sEfERI4Pe2z7rbx7JVGS0SEEGbnAbV+9X0bs3Hs9R/nCYartwJQg16bK1P0jPsMzbiXjT+kYNHYLCsHQ8HA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/addon/lint/javascript-lint.min.js" integrity="sha512-zwusqVz1qn+JyCHc09C0naAEMMZKn3K8deUOpDMnC4WCM59kfg8rmF+dJNyNW9AmfIELag6MeALrEBD33rJVpA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/mode/javascript/javascript.min.js" integrity="sha512-9mEZ3vO6zMj0ub2Wypnt8owrHeoJCH22MkzeJ9eD3hca8/Wlqo5pEopI6HloA0F53f/RkRkHs8TyZMxbwVmnFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<script>
+var editor = CodeMirror(document.body, {
+	value: "${scriptSource}",
+	theme: "night",
+	lineNumbers: true
+});
+window.addEventListener('keydown', e => {
+	console.log(e.key+' '+e.ctrlKey+' '+e.altKey);
+	if (e.key=='s' && e.ctrlKey && e.altKey) {
+	    window.opener.hope.script('${id}', editor.getValue());
+	    e.preventDefault();
+	    return false;
+	}
+});
+</script></body>`;
+			editorWindow.document.write(editor);
+		}
 		return {};
 	},
 	tree: function() {
