@@ -2,6 +2,7 @@ import { bus } from './hope.bus.js';
 import { seamless } from './hope.seamless.js';
 import { api } from './hope.api.js';
 import './hope.inspector.js';
+import {storage } from './hope.storage.js';
 
 const LOADING    = 1;
 const FAILED     = 2;
@@ -41,7 +42,8 @@ export let hope = document.hope = {
 	host: null,
 	doclets: {},
 	bus: bus,
-	api: api
+	api: api,
+	storage: storage
 };
 
 /**
