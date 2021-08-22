@@ -88,7 +88,7 @@ var handleChanges = function(changes) {
 var addDoclet = function(frame) {
 	let name = frame.name;
 	if (!name) {
-		name = 'hope_'+Object.keys(hope.doclets).length+1;
+		name = 'hope_'+(Object.keys(hope.doclets).length+1);
 		frame.name = name;
 	}
 	let hopeDoclet = new HopeDoclet(frame, name);
@@ -99,7 +99,7 @@ var addDoclet = function(frame) {
 		hopeDoclet.status = FAILED;
 	});
 	if (typeof hope.doclets[name] !== 'undefined') {
-		name += '_' + Object.keys(hope.doclets).length+1; //@TODO: prevent names like foo_1_1_1
+		name += '_' + (Object.keys(hope.doclets).length+1); //@TODO: prevent names like foo_1_1_1
 		frame.name = name;
 	}
 	hope.doclets[name] = hopeDoclet;
