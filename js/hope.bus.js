@@ -105,6 +105,8 @@ export const bus = {
         let targetName = 'host';
         if (target && target.name) {
             targetName = target.name;
+        } else if (typeof target == 'string') {
+            targetName = target;
         }
         let resolvedTarget = getTarget(target);
         if (!resolvedTarget) {
