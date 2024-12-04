@@ -38,10 +38,10 @@ let readyCallbacks = [];
 
 function init() {
     Promise.all([
-        loadScript('https://bossanova.uk/jexcel/v4/jexcel.js'),
-        loadScript('https://bossanova.uk/jsuites/v3/jsuites.js'),
-        loadStylesheet('https://bossanova.uk/jexcel/v4/jexcel.css'),
-        loadStylesheet('https://bossanova.uk/jsuites/v3/jsuites.css')
+        loadScript('https://bossanova.uk/jspreadsheet/v4/jexcel.js'),
+        loadScript('https://jsuites.net/v4/jsuites.js'),
+        loadStylesheet('https://bossanova.uk/jspreadsheet/v4/jexcel.css'),
+        loadStylesheet('https://jsuites.net/v4/jsuites.css')
     ]).then(e => {
         let spreadsheet = document.createElement('div');
         spreadsheet.id="jExcelRoot";
